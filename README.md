@@ -1,4 +1,16 @@
-What The Project Does
+# National Infrastructure Risk & Spatial Intelligence Platform (SIH 2026)
+
+> **Live Website (GitHub Pages)**: [https://supercoder1508.github.io/sih/](https://supercoder1508.github.io/sih/)
+>
+> **Interactive Modules**:
+> - [Executive National Overview & Corridors](https://supercoder1508.github.io/sih/index.html)
+> - [Operational GIS & Risk Command Center](https://supercoder1508.github.io/sih/dashboard.html)
+> - [Technical Methodology & Benchmarking](https://supercoder1508.github.io/sih/methodology.html)
+> - [XAI & Survival Analysis Workbench](https://supercoder1508.github.io/sih/xai_survival.html)
+
+---
+
+## What The Project Does
 
 In India, big infrastructure projects (highways, railways, expressways) almost always need to acquire private land first. There's a specific law — the RFCTLARR Act, 2013 — that governs how that acquisition has to happen, and it comes with a hard legal clock: once the first notice is published, the government has 365 days to finish the formal land declaration. Miss that deadline, and the entire legal process lapses — years of paperwork and surveys have to restart from zero. According to the project's own documentation, land acquisition delays like this are responsible for over 70% of the time and cost overruns on India's infrastructure projects, worth well over ₹100 lakh crore in total.
 

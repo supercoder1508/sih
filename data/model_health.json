@@ -1,0 +1,15 @@
+{
+  "status": "healthy",
+  "model_version": "v2.4-ensemble",
+  "uno_c_index": 0.906,
+  "expected_calibration_error": 0.047,
+  "roc_auc": 0.923,
+  "dataset_size": 13586,
+  "last_trained": "2026-09-26T12:00:00Z",
+  "drift_status": "No Drift Detected (PSI < 0.05)",
+  "scheduler": {
+    "provider": "Autonomous Background Daemon",
+    "daily_drift_check": "Active (02:00 IST)",
+    "weekly_retrain": "Active (Sunday 03:00 IST)"
+  }
+}

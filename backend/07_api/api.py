@@ -76,7 +76,7 @@ def resolve_workspace_path(path: str) -> str:
     return os.path.join(_WORKSPACE_ROOT, path)
 
 def find_frontend_file(rel_path: str) -> Optional[str]:
-    for base in ["frontend", "frontend/maps", "frontend/screens", "dashboard", "dashboard/maps", "dashboard/screens"]:
+    for base in ["", "frontend", "frontend/maps", "frontend/screens", "dashboard", "dashboard/maps", "dashboard/screens"]:
         candidate = os.path.normpath(os.path.join(_WORKSPACE_ROOT, base, rel_path))
         if os.path.isfile(candidate):
             return candidate
@@ -588,7 +588,7 @@ def serve_landing():
 @app.get("/prescriptive-ai")
 def serve_dashboard():
     """Task 3: Standalone Dashboard Workbench"""
-    path = find_frontend_file("index.html")
+    path = find_frontend_file("dashboard.html") or find_frontend_file("index.html")
     if path:
         return FileResponse(path)
     raise HTTPException(status_code=404, detail="Dashboard not found")
