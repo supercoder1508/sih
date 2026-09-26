@@ -1,11 +1,11 @@
 {
-  "total_projects": 13586,
+  "total_projects": 13589,
   "mean_delay_probability": 56.8,
   "median_survival_days": 118,
   "uno_c_index": 0.906,
-  "version": "v2.4-ensemble",
-  "active_corridors": 13586,
+  "version": "v2.3.0",
+  "active_corridors": 13589,
   "high_risk_count": 7712,
-  "medium_risk_count": 5848,
+  "medium_risk_count": 5849,
   "low_risk_count": 26
 }

@@ -445,6 +445,21 @@ def ingest_project_records(
         except Exception as e:
             logger.warning(f"Could not update model health at {health_target}: {e}")
 
+    # Synchronize data/projects_stats.json & dashboard/data/projects_stats.json
+    for stats_target in [BASE_DIR / "data" / "projects_stats.json", BASE_DIR / "dashboard" / "data" / "projects_stats.json"]:
+        try:
+            stats_data = {}
+            if stats_target.exists():
+                with open(stats_target, "r", encoding="utf-8") as sf:
+                    stats_data = json.load(sf)
+            stats_data["total_projects"] = total_count
+            stats_data["active_corridors"] = total_count
+            stats_target.parent.mkdir(parents=True, exist_ok=True)
+            with open(stats_target, "w", encoding="utf-8") as sf:
+                json.dump(stats_data, sf, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not update stats data at {stats_target}: {e}")
+
     logger.info(f"Ingestion successful: {len(validated_records)} records appended. Total data store: {total_count} rows across all CSV replicas.")
     return {
         "status": "success",
@@ -927,6 +942,22 @@ class RetrainingOrchestrator:
                     json.dump(health_data, hf, indent=2)
             except Exception as e:
                 logger.warning(f"Could not update model health file {health_target}: {e}")
+
+        # Synchronize data/projects_stats.json & dashboard/data/projects_stats.json
+        for stats_target in [BASE_DIR / "data" / "projects_stats.json", BASE_DIR / "dashboard" / "data" / "projects_stats.json"]:
+            try:
+                stats_data = {}
+                if stats_target.exists():
+                    with open(stats_target, "r", encoding="utf-8") as sf:
+                        stats_data = json.load(sf)
+                stats_data["total_projects"] = training_size
+                stats_data["active_corridors"] = training_size
+                stats_data["version"] = saved_card["version"]
+                stats_target.parent.mkdir(parents=True, exist_ok=True)
+                with open(stats_target, "w", encoding="utf-8") as sf:
+                    json.dump(stats_data, sf, indent=2)
+            except Exception as e:
+                logger.warning(f"Could not update stats file {stats_target}: {e}")
 
         return {
             "status": "completed",

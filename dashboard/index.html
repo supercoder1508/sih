@@ -1121,7 +1121,7 @@
       <section class="slim-stats-strip">
         <div class="stat-pill">
           <span class="stat-pill-label">Monitored Projects</span>
-          <span class="stat-pill-val" id="hero-total-projects">13,586</span>
+          <span class="stat-pill-val" id="hero-total-projects">13,589</span>
         </div>
         <div class="stat-pill-divider"></div>
         <div class="stat-pill">
@@ -2067,7 +2067,7 @@
                 <div class="metric-tile-title" style="color: var(--color-link-blue); font-weight: 600;">Continuous Training Store</div>
                 <span class="badge-tier badge-tier-Low" style="font-size: 9px; padding: 1px 6px;">Active Ingestion</span>
               </div>
-              <div class="metric-tile-val" id="sch-dataset-size" style="font-size: 18px; color: var(--color-carbon); font-weight: 700; margin-top: 4px;">13,586 Projects</div>
+              <div class="metric-tile-val" id="sch-dataset-size" style="font-size: 18px; color: var(--color-carbon); font-weight: 700; margin-top: 4px;">13,589 Projects</div>
               <div class="metric-tile-sub" style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                 <span>Appends on Database Save</span>
                 <a href="javascript:void(0)" onclick="downloadDatasetCSV()" style="color: var(--color-apple-blue); text-decoration: underline; font-size: 11px; font-weight: 500;">Download CSV ↓</a>
@@ -3867,7 +3867,12 @@
         loadDistrictBoundariesAsync();
 
         // Update hero KPI strip
-        const displayTotal = Math.max(13586, allProjects.length);
+        let dynCount = 0;
+        try {
+          const dyn = JSON.parse(localStorage.getItem('dynamic_training_dataset') || '[]');
+          dynCount = Array.isArray(dyn) ? dyn.length : 0;
+        } catch (e) {}
+        const displayTotal = Math.max(13589, allProjects.length, 13586 + dynCount);
         updateMonitoredProjectsCounter(displayTotal, forceRefresh);
         lastKnownProjectCount = displayTotal;
         const meanProb = (allProjects.reduce((acc, p) => acc + (p.delay_probability || 0), 0) / allProjects.length).toFixed(1);
@@ -3933,12 +3938,16 @@
       if (isSyncingStats) return;
       isSyncingStats = true;
       try {
+        const apiBase = typeof getApiBase === 'function' ? getApiBase() : '';
         const urlsToTry = [
+          apiBase ? `${apiBase}/projects/stats` : null,
+          apiBase ? `${apiBase}/api/dataset/stats` : null,
+          'http://127.0.0.1:8000/projects/stats',
+          '/projects/stats',
           'data/projects_stats.json',
           './data/projects_stats.json',
-          `${getApiBase()}/projects/stats`,
-          '/projects/stats'
-        ];
+          'dashboard/data/projects_stats.json'
+        ].filter(Boolean);
         let res = null;
         for (const u of urlsToTry) {
           try {
@@ -3948,7 +3957,15 @@
         }
         if (!res || !res.ok) return;
         const stats = await res.json();
-        const currentCount = stats.total_projects;
+
+        let dynCount = 0;
+        try {
+          const dyn = JSON.parse(localStorage.getItem('dynamic_training_dataset') || '[]');
+          dynCount = Array.isArray(dyn) ? dyn.length : 0;
+        } catch (e) {}
+
+        const reportedCount = parseInt(stats.total_projects || stats.training_size || stats.dataset_size || 13589, 10);
+        const currentCount = Math.max(reportedCount, 13586 + dynCount, lastKnownProjectCount || 0);
         const currentVer = stats.version;
 
         if (lastKnownProjectCount !== null && currentCount !== lastKnownProjectCount) {
@@ -3964,7 +3981,7 @@
           }
           // Refresh GIS map markers in background
           loadGeoData(true);
-          if (typeof showToast === 'function') {
+          if (typeof showToast === 'function' && !silent) {
             showToast(`Monitored Projects updated: ${currentCount.toLocaleString()} active infrastructure corridors.`);
           }
         } else if (lastKnownProjectCount === null) {
@@ -7773,8 +7790,37 @@
         renderSavedAnalysesMarkers(savedAnalyses);
         renderSavedAnalysesList(savedAnalyses);
 
-        // Update dataset size counter in Continuous Learning strip (+1 project)
-        const updatedSize = 13586 + dynamicStore.length;
+        // Immediately push into window.allProjects so the corridor pin appears directly on main map layer
+        if (window.allProjects && Array.isArray(window.allProjects)) {
+          const mapProj = {
+            project_id: finalRecord.project_id || finalRecord.id || `PROJ-${Date.now()}`,
+            project_name: finalRecord.project_name || projName,
+            state: finalRecord.state || state,
+            district: finalRecord.district || district,
+            project_type: finalRecord.project_type || 'Infrastructure',
+            latitude: finalRecord.latitude || localRecord.latitude,
+            longitude: finalRecord.longitude || localRecord.longitude,
+            delay_probability: finalRecord.delay_probability != null ? finalRecord.delay_probability : (localRecord.delay_probability || 50),
+            risk_tier: finalRecord.risk_tier || localRecord.risk_tier || 'Medium',
+            composite_risk_score: finalRecord.composite_risk_score || localRecord.composite_risk_score || 50,
+            predicted_delay_days: finalRecord.predicted_delay_days || localRecord.predicted_delay_days || 100,
+            estimated_cost_inr_crore: payload.estimated_cost_inr_crore || 100,
+            land_area_hectares: payload.land_area_hectares || 50
+          };
+          window.allProjects = [mapProj, ...window.allProjects.filter(p => p.project_id !== mapProj.project_id)];
+          if (typeof renderMarkers === 'function') {
+            renderMarkers(window.allProjects);
+          }
+          if (typeof updateStatsCounters === 'function') {
+            updateStatsCounters(window.allProjects);
+          }
+        }
+
+        // Calculate accurate dataset count from server or local store
+        const serverCount = finalRecord?.continuous_learning?.data_store_count;
+        const updatedSize = serverCount || Math.max(13589, 13586 + dynamicStore.length, (window.allProjects ? window.allProjects.length : 13589));
+        lastKnownProjectCount = updatedSize;
+
         const sizeEl = document.getElementById('sch-dataset-size');
         if (sizeEl) {
           sizeEl.textContent = `${updatedSize.toLocaleString()} Projects`;
@@ -7812,7 +7858,34 @@
         renderSavedAnalysesList(savedAnalyses);
         showToast(`Saved '${projName}' to local dataset! Continuous learning queue updated.`);
 
-        const updatedSize = 13586 + dynamicStore.length;
+        if (window.allProjects && Array.isArray(window.allProjects)) {
+          const mapProj = {
+            project_id: localRecord.id || `PROJ-${Date.now()}`,
+            project_name: projName,
+            state: state,
+            district: district,
+            project_type: payload.project_type || 'Infrastructure',
+            latitude: localRecord.latitude,
+            longitude: localRecord.longitude,
+            delay_probability: localRecord.delay_probability || 50,
+            risk_tier: localRecord.risk_tier || 'Medium',
+            composite_risk_score: localRecord.composite_risk_score || 50,
+            predicted_delay_days: localRecord.predicted_delay_days || 100,
+            estimated_cost_inr_crore: payload.estimated_cost_inr_crore || 100,
+            land_area_hectares: payload.land_area_hectares || 50
+          };
+          window.allProjects = [mapProj, ...window.allProjects.filter(p => p.project_id !== mapProj.project_id)];
+          if (typeof renderMarkers === 'function') {
+            renderMarkers(window.allProjects);
+          }
+          if (typeof updateStatsCounters === 'function') {
+            updateStatsCounters(window.allProjects);
+          }
+        }
+
+        const updatedSize = Math.max(13589, 13586 + dynamicStore.length, (window.allProjects ? window.allProjects.length : 13589));
+        lastKnownProjectCount = updatedSize;
+
         if (typeof updateMonitoredProjectsCounter === 'function') {
           updateMonitoredProjectsCounter(updatedSize, true);
         }
@@ -7907,11 +7980,14 @@
           const dyn = JSON.parse(localStorage.getItem('dynamic_training_dataset') || '[]');
           dynamicCount = dyn.length;
         } catch(e) {}
-        const serverDataSize = data.training_size || data.dataset_size || data.data_store_count || 13586;
-        const totalSize = Math.max(serverDataSize, 13586 + dynamicCount);
+        const serverDataSize = data.training_size || data.dataset_size || data.data_store_count || 13589;
+        const totalSize = Math.max(serverDataSize, 13586 + dynamicCount, lastKnownProjectCount || 0);
         const dataSizeEl = document.getElementById('sch-dataset-size');
         if (dataSizeEl) {
           dataSizeEl.textContent = `${Number(totalSize).toLocaleString()} Projects`;
+        }
+        if (typeof updateMonitoredProjectsCounter === 'function') {
+          updateMonitoredProjectsCounter(totalSize, false);
         }
 
         if (data.scheduler) {

@@ -58,6 +58,15 @@ def test_continuous_learning_dataset():
     assert h1.get('training_size') == csv1
     assert h2.get('training_size') == csv1
 
+    # Check projects_stats.json
+    with open('data/projects_stats.json') as f:
+        s1 = json.load(f)
+    with open('dashboard/data/projects_stats.json') as f:
+        s2 = json.load(f)
+    print(f'Projects stats total_projects: {s1.get("total_projects")} and {s2.get("total_projects")}')
+    assert s1.get('total_projects') == csv1
+    assert s2.get('total_projects') == csv1
+
     # Check geo json
     with open('data/projects_geo.json') as f:
         geo1 = json.load(f)

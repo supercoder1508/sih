@@ -62,7 +62,7 @@
       <div class="max-w-4xl mx-auto">
         <h2 class="text-[32px] font-semibold text-[#1d1d1f] tracking-tight mb-4">Risk Classification &amp; Dataset Scope</h2>
         <p class="text-[17px] font-normal text-[#707070] leading-relaxed max-w-3xl mb-6">
-          Trained and benchmarked on 13,532 authentic baseline infrastructure corridors (live continuous training corpus: <strong id="stat-dataset-size" class="text-[#0071e3] font-semibold metric-flash">13,586</strong> corridors) spanning all 36 States &amp; Union Territories (453 Districts) from MoRTH/NHAI, Indian Railways, and MNRE. A stacked ensemble of four gradient-boosted and tree-based models — XGBoost, LightGBM, CatBoost, and ExtraTrees — each trained independently, with their outputs combined by a logistic regression meta-learner. Predictions are calibrated using Platt scaling to ensure probability outputs are reliable, not just well-ranked.
+          Trained and benchmarked on 13,532 authentic baseline infrastructure corridors (live continuous training corpus: <strong id="stat-dataset-size" class="text-[#0071e3] font-semibold metric-flash">13,589</strong> corridors) spanning all 36 States &amp; Union Territories (453 Districts) from MoRTH/NHAI, Indian Railways, and MNRE. A stacked ensemble of four gradient-boosted and tree-based models — XGBoost, LightGBM, CatBoost, and ExtraTrees — each trained independently, with their outputs combined by a logistic regression meta-learner. Predictions are calibrated using Platt scaling to ensure probability outputs are reliable, not just well-ranked.
         </p>
 
         <!-- Model Pills -->
@@ -362,11 +362,11 @@
           <div class="bg-[#f5f5f7] p-5 rounded-2xl border border-[#e5e5ea] flex flex-col justify-between">
             <div>
               <div class="text-[11px] font-semibold tracking-wider uppercase text-[#707070] mb-1">TOTAL TRAINING CORPUS</div>
-              <div id="cl-dataset-size" class="text-[26px] font-bold text-[#0071e3] tracking-tight metric-flash">13,586 Corridors</div>
+              <div id="cl-dataset-size" class="text-[26px] font-bold text-[#0071e3] tracking-tight metric-flash">13,589 Corridors</div>
             </div>
             <div class="mt-4 pt-3 border-t border-[#d2d2d7]/60 flex items-center justify-between text-xs">
               <span class="text-[#707070]">Ingestion Status:</span>
-              <span id="cl-ingest-status" class="font-semibold text-emerald-600">Active (+54 Ingested)</span>
+              <span id="cl-ingest-status" class="font-semibold text-emerald-600">Active (+57 Ingested)</span>
             </div>
           </div>
 
@@ -521,7 +521,7 @@
       if (!data) return;
 
       // 1. Ingested Dataset Size
-      const count = data.dataset_size || data.training_size || data.data_store_count || 13586;
+      const count = data.dataset_size || data.training_size || data.data_store_count || data.total_projects || 13589;
       const formattedCount = Number(count).toLocaleString();
       const statDatasetEl = document.getElementById('stat-dataset-size');
       if (statDatasetEl && statDatasetEl.textContent !== formattedCount) {
@@ -650,11 +650,24 @@
 
         // Try 1: Live FastAPI backend if online
         try {
-          const res = await fetch('/retrain/status', { cache: 'no-store' });
-          if (res.ok) {
-            const data = await res.json();
-            applyContinuousLearningTelemetry(data);
-            loaded = true;
+          const apiEndpoints = [
+            '/retrain/status',
+            'http://127.0.0.1:8000/retrain/status',
+            '/model/health',
+            'http://127.0.0.1:8000/model/health',
+            '/projects/stats',
+            'http://127.0.0.1:8000/projects/stats'
+          ];
+          for (const ep of apiEndpoints) {
+            try {
+              const res = await fetch(ep, { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                applyContinuousLearningTelemetry(data);
+                loaded = true;
+                break;
+              }
+            } catch (e) {}
           }
         } catch (e) {}
 
@@ -663,7 +676,10 @@
           const endpoints = [
             'data/model_health.json',
             './data/model_health.json',
-            'dashboard/data/model_health.json'
+            'dashboard/data/model_health.json',
+            'data/projects_stats.json',
+            './data/projects_stats.json',
+            'dashboard/data/projects_stats.json'
           ];
           for (const url of endpoints) {
             try {
@@ -690,7 +706,8 @@
             const arr = JSON.parse(savedStr);
             if (Array.isArray(arr) && arr.length > 0) {
               const base = 13586;
-              applyContinuousLearningTelemetry({ dataset_size: base + arr.length });
+              const calcCount = Math.max(13589, base + arr.length);
+              applyContinuousLearningTelemetry({ dataset_size: calcCount });
             }
           }
         } catch (e) {}
