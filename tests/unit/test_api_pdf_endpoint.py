@@ -1,14 +1,39 @@
 import requests
 import json
+from fastapi.testclient import TestClient
+from api import app
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"X-API-Key": "super-secret-token"}
+
+# Check if a live server is running, otherwise use FastAPI in-memory TestClient
+_live_server = False
+try:
+    _res = requests.get(f"{BASE_URL}/docs", timeout=0.5)
+    _live_server = _res.status_code < 500
+except Exception:
+    _live_server = False
+
+if _live_server:
+    http_client = requests
+else:
+    http_client = TestClient(app)
+
+def req_post(path, **kwargs):
+    if _live_server:
+        return requests.post(f"{BASE_URL}{path}", **kwargs)
+    return http_client.post(path, **kwargs)
+
+def req_get(path, **kwargs):
+    if _live_server:
+        return requests.get(f"{BASE_URL}{path}", **kwargs)
+    return http_client.get(path, **kwargs)
 
 def test_extract_endpoint():
     print("=== TEST 1: POST /extract-project-pdf WITH DEMO PDF ===")
     with open("templates/Land_Acquisition_Project_Data_Sheet_DEMO.pdf", "rb") as f:
         files = {"file": ("Land_Acquisition_Project_Data_Sheet_DEMO.pdf", f, "application/pdf")}
-        res = requests.post(f"{BASE_URL}/extract-project-pdf", headers=HEADERS, files=files)
+        res = req_post("/extract-project-pdf", headers=HEADERS, files=files)
     print(f"Status: {res.status_code}")
     assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
     data = res.json()
@@ -23,7 +48,7 @@ def test_extract_endpoint():
     print("=== TEST 2: AUTH REJECTION (NO API KEY) ===")
     with open("templates/Land_Acquisition_Project_Data_Sheet_DEMO.pdf", "rb") as f:
         files = {"file": ("demo.pdf", f, "application/pdf")}
-        res_no_auth = requests.post(f"{BASE_URL}/extract-project-pdf", files=files)
+        res_no_auth = req_post("/extract-project-pdf", files=files)
     print(f"Status: {res_no_auth.status_code}")
     assert res_no_auth.status_code in [401, 403], f"Expected 401/403, got {res_no_auth.status_code}"
     print(">>> Endpoint Test 2 PASSED: Correctly blocked unauthorized request!\n")
@@ -31,7 +56,7 @@ def test_extract_endpoint():
     print("=== TEST 3: BLANK TEMPLATE (EXPECT 400) ===")
     with open("templates/Form_LA-7_Blank_Template.pdf", "rb") as f:
         files = {"file": ("blank.pdf", f, "application/pdf")}
-        res_blank = requests.post(f"{BASE_URL}/extract-project-pdf", headers=HEADERS, files=files)
+        res_blank = req_post("/extract-project-pdf", headers=HEADERS, files=files)
     print(f"Status: {res_blank.status_code}, detail: {res_blank.json().get('detail')}")
     assert res_blank.status_code == 400
     print(">>> Endpoint Test 3 PASSED: Correctly returned 400 for blank template!\n")
@@ -39,13 +64,13 @@ def test_extract_endpoint():
     print("=== TEST 4: UNRELATED PDF (EXPECT 400) ===")
     with open("templates/unrelated_document.pdf", "rb") as f:
         files = {"file": ("unrelated.pdf", f, "application/pdf")}
-        res_unrelated = requests.post(f"{BASE_URL}/extract-project-pdf", headers=HEADERS, files=files)
+        res_unrelated = req_post("/extract-project-pdf", headers=HEADERS, files=files)
     print(f"Status: {res_unrelated.status_code}, detail: {res_unrelated.json().get('detail')}")
     assert res_unrelated.status_code == 400
     print(">>> Endpoint Test 4 PASSED: Correctly returned 400 for unrelated document!\n")
 
     print("=== TEST 5: GET /download-blank-template ===")
-    res_dl = requests.get(f"{BASE_URL}/download-blank-template")
+    res_dl = req_get("/download-blank-template")
     print(f"Status: {res_dl.status_code}, Content-Type: {res_dl.headers.get('Content-Type')}, Size: {len(res_dl.content)} bytes")
     assert res_dl.status_code == 200
     assert len(res_dl.content) > 1000

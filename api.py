@@ -13,6 +13,12 @@ for _p in [_ROOT, _BACKEND]:
 
 from backend.api import app
 
+try:
+    from backend.api import load_artifacts
+except ImportError:
+    def load_artifacts():
+        pass
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.api:app", host="0.0.0.0", port=8000, reload=True)

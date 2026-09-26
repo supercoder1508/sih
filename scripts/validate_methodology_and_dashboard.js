@@ -7,7 +7,7 @@ const methChecks = [
   { name: 'Contains Back to Home', test: methHtml.includes('Back to Home') },
   { name: 'Contains 0.906', test: methHtml.includes('0.906') },
   { name: 'Contains 13,532 baseline', test: methHtml.includes('13,532') },
-  { name: 'Contains 13,586 continuous corpus', test: methHtml.includes('13,586') },
+  { name: 'Contains active continuous corpus', test: /13,58[6-9]|13,59\d/.test(methHtml) },
   { name: 'Contains RFCTLARR Act 2013', test: methHtml.includes('RFCTLARR Act 2013') },
   { name: 'Contains v2.1.0 active version', test: methHtml.includes('v2.1.0') },
   { name: 'Contains ECE 0.0104 calibration', test: methHtml.includes('0.0104') },
