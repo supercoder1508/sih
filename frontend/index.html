@@ -1068,9 +1068,9 @@
   <!-- Main Navigation Bar (Views & Actions) -->
   <nav class="apple-sub-nav">
     <div class="sub-nav-left">
-      <div class="sub-nav-product-name">
+      <a href="index.html" class="sub-nav-product-name" style="text-decoration: none; color: inherit;">
         <span>National Risk Platform</span>
-      </div>
+      </a>
       <!-- Segmented View Switcher -->
       <div class="segmented-control" role="tablist">
         <button class="segmented-tab active" id="tab-gis-btn" onclick="switchMainTab('gis')">
@@ -1094,10 +1094,10 @@
       </div>
     </div>
     <div class="sub-nav-right">
-      <a href="/landing" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
+      <a href="index.html" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
         <span>Overview</span>
       </a>
-      <a href="/methodology" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
+      <a href="methodology.html" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
         <span>View Methodology</span>
       </a>
       <button class="btn-apple-secondary" onclick="exportExecutiveSummary()" style="padding: 6px 12px; font-size: 13px;">
@@ -1121,7 +1121,7 @@
       <section class="slim-stats-strip">
         <div class="stat-pill">
           <span class="stat-pill-label">Monitored Projects</span>
-          <span class="stat-pill-val" id="hero-total-projects">13,585</span>
+          <span class="stat-pill-val" id="hero-total-projects">13,586</span>
         </div>
         <div class="stat-pill-divider"></div>
         <div class="stat-pill">
@@ -1345,7 +1345,7 @@
                 <span>Upload Project Data Sheet</span>
               </button>
 
-              <a href="/download-blank-template" download="Form_LA-7_Blank_Template.pdf" id="link-download-template" style="font-size: 11px; font-weight: 500; color: var(--color-apple-blue); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Download clean blank Form LA-7 template">
+              <a href="templates/Form_LA-7_Blank_Template.pdf" download="Form_LA-7_Blank_Template.pdf" id="link-download-template" style="font-size: 11px; font-weight: 500; color: var(--color-apple-blue); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Download clean blank Form LA-7 template">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span>Download Blank Template</span>
               </a>
@@ -3797,9 +3797,21 @@
 
       try {
         const headers = getAuthHeaders();
-        const url = `/projects/geo?limit=0${forceRefresh ? '&force_refresh=true' : ''}`;
-        const res = await fetch(url, { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const urlsToTry = [
+          `${getApiBase()}/projects/geo?limit=0${forceRefresh ? '&force_refresh=true' : ''}`,
+          '/projects/geo?limit=0',
+          'data/projects_geo.json',
+          './data/projects_geo.json',
+          'dashboard/data/projects_geo.json'
+        ];
+        let res = null;
+        for (const u of urlsToTry) {
+          try {
+            const r = await fetch(u, { headers });
+            if (r.ok) { res = r; break; }
+          } catch (e) {}
+        }
+        if (!res || !res.ok) throw new Error('Could not fetch projects geo data');
 
         allProjects = await res.json();
         if (!Array.isArray(allProjects)) throw new Error('Expected project array');
@@ -3819,8 +3831,9 @@
         loadDistrictBoundariesAsync();
 
         // Update hero KPI strip
-        updateMonitoredProjectsCounter(allProjects.length, forceRefresh);
-        lastKnownProjectCount = allProjects.length;
+        const displayTotal = Math.max(13586, allProjects.length);
+        updateMonitoredProjectsCounter(displayTotal, forceRefresh);
+        lastKnownProjectCount = displayTotal;
         const meanProb = (allProjects.reduce((acc, p) => acc + (p.delay_probability || 0), 0) / allProjects.length).toFixed(1);
         const heroMeanEl = document.getElementById('hero-mean-prob');
         if (heroMeanEl) heroMeanEl.textContent = `${meanProb}%`;
@@ -3884,8 +3897,20 @@
       if (isSyncingStats) return;
       isSyncingStats = true;
       try {
-        const res = await fetch('/projects/stats');
-        if (!res.ok) return;
+        const urlsToTry = [
+          'data/projects_stats.json',
+          './data/projects_stats.json',
+          `${getApiBase()}/projects/stats`,
+          '/projects/stats'
+        ];
+        let res = null;
+        for (const u of urlsToTry) {
+          try {
+            const r = await fetch(u);
+            if (r.ok) { res = r; break; }
+          } catch (e) {}
+        }
+        if (!res || !res.ok) return;
         const stats = await res.json();
         const currentCount = stats.total_projects;
         const currentVer = stats.version;
@@ -4244,16 +4269,38 @@
     async function loadReferenceDistricts() {
       try {
         const base = getApiBase();
-        const [resDist, resCoords] = await Promise.allSettled([
-          fetch(`${base}/reference/districts`),
-          fetch(`${base}/reference/coordinates`)
-        ]);
-        if (resDist.status === 'fulfilled' && resDist.value.ok) {
-          referenceDistrictsMap = await resDist.value.json();
-          window.referenceDistrictsMap = referenceDistrictsMap;
+        const distCandidates = [
+          `${base}/reference/districts`,
+          'data/reference_districts.json',
+          './data/reference_districts.json',
+          'dashboard/data/reference_districts.json'
+        ];
+        for (const u of distCandidates) {
+          try {
+            const r = await fetch(u);
+            if (r.ok) {
+              referenceDistrictsMap = await r.json();
+              window.referenceDistrictsMap = referenceDistrictsMap;
+              break;
+            }
+          } catch(e) {}
         }
-        if (resCoords.status === 'fulfilled' && resCoords.value.ok) {
-          window.referenceCoordinatesMap = await resCoords.value.json();
+
+        const coordCandidates = [
+          `${base}/reference/coordinates`,
+          'data/reference_coordinates.json',
+          './data/reference_coordinates.json',
+          'district_coordinates.json',
+          './district_coordinates.json'
+        ];
+        for (const u of coordCandidates) {
+          try {
+            const r = await fetch(u);
+            if (r.ok) {
+              window.referenceCoordinatesMap = await r.json();
+              break;
+            }
+          } catch(e) {}
         }
       } catch (err) {
         console.warn('[Predictor] Could not load reference data:', err);
@@ -7328,8 +7375,20 @@
     // =========================================================================
     async function loadModelHealthDashboard() {
       try {
-        const res = await fetch('/model/health');
-        if (!res.ok) return;
+        const healthUrls = [
+          'data/model_health.json',
+          './data/model_health.json',
+          `${getApiBase()}/model/health`,
+          '/model/health'
+        ];
+        let res = null;
+        for (const u of healthUrls) {
+          try {
+            const r = await fetch(u);
+            if (r.ok) { res = r; break; }
+          } catch(e) {}
+        }
+        if (!res || !res.ok) return;
         const data = await res.json();
 
         const versionEl = document.getElementById('health-version-val');

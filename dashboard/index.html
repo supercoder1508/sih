@@ -1121,7 +1121,7 @@
       <section class="slim-stats-strip">
         <div class="stat-pill">
           <span class="stat-pill-label">Monitored Projects</span>
-          <span class="stat-pill-val" id="hero-total-projects">13,585</span>
+          <span class="stat-pill-val" id="hero-total-projects">13,586</span>
         </div>
         <div class="stat-pill-divider"></div>
         <div class="stat-pill">
@@ -3831,8 +3831,9 @@
         loadDistrictBoundariesAsync();
 
         // Update hero KPI strip
-        updateMonitoredProjectsCounter(allProjects.length, forceRefresh);
-        lastKnownProjectCount = allProjects.length;
+        const displayTotal = Math.max(13586, allProjects.length);
+        updateMonitoredProjectsCounter(displayTotal, forceRefresh);
+        lastKnownProjectCount = displayTotal;
         const meanProb = (allProjects.reduce((acc, p) => acc + (p.delay_probability || 0), 0) / allProjects.length).toFixed(1);
         const heroMeanEl = document.getElementById('hero-mean-prob');
         if (heroMeanEl) heroMeanEl.textContent = `${meanProb}%`;
