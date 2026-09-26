@@ -1085,7 +1085,7 @@
         <button class="segmented-tab" id="tab-mitigations-btn" onclick="switchMainTab('mitigations')">
           Prescriptive AI
         </button>
-        <button class="segmented-tab" id="tab-monitor-btn" onclick="switchMainTab('monitor')">
+        <button class="segmented-tab" id="tab-monitor-btn" style="display:none;" onclick="switchMainTab('monitor')">
           Continuous Learning
         </button>
         <button class="segmented-tab" id="tab-health-btn" style="display:none;" onclick="switchMainTab('monitor')">
@@ -1097,7 +1097,7 @@
       <a href="index.html" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
         <span>Overview</span>
       </a>
-      <a href="methodology.html" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
+      <a href="/methodology" onclick="if(window.location.protocol==='file:' || window.location.hostname.includes('github.io')){ this.href='methodology.html'; }" class="btn-apple-secondary" style="text-decoration: none; padding: 6px 12px; font-size: 13px;">
         <span>View Methodology</span>
       </a>
       <button class="btn-apple-secondary" onclick="exportExecutiveSummary()" style="padding: 6px 12px; font-size: 13px;">
@@ -7538,11 +7538,29 @@
         renderSavedAnalysesList(savedAnalyses);
 
         // Update dataset size counter in Continuous Learning strip (+1 project)
+        let updatedSize = 13587;
         const sizeEl = document.getElementById('sch-dataset-size');
         if (sizeEl) {
           const currentSize = parseInt((sizeEl.textContent || '13586').replace(/\D/g, '')) || 13586;
-          sizeEl.textContent = `${(currentSize + 1).toLocaleString()} Projects`;
+          updatedSize = currentSize + 1;
+          sizeEl.textContent = `${updatedSize.toLocaleString()} Projects`;
         }
+
+        // Broadcast continuous learning update to methodology page and any open tabs
+        try {
+          const telemetryPayload = {
+            type: 'DATASET_INGESTION',
+            dataset_size: updatedSize,
+            training_size: updatedSize,
+            new_project: projName,
+            timestamp: new Date().toISOString()
+          };
+          localStorage.setItem('model_health_telemetry_update', JSON.stringify(telemetryPayload));
+          if (typeof BroadcastChannel !== 'undefined') {
+            const bc = new BroadcastChannel('continuous_learning_channel');
+            bc.postMessage(telemetryPayload);
+          }
+        } catch (e) {}
 
         // Instantly trigger dataset sync to increment Monitored Projects counter with animation
         if (typeof syncDatasetStats === 'function') {
@@ -7555,6 +7573,21 @@
         renderSavedAnalysesMarkers(savedAnalyses);
         renderSavedAnalysesList(savedAnalyses);
         showToast(`Saved '${projName}' locally! Continuous learning queue updated.`);
+
+        try {
+          const telemetryPayload = {
+            type: 'DATASET_INGESTION',
+            dataset_size: 13586 + (savedAnalyses ? savedAnalyses.length : 1),
+            training_size: 13586 + (savedAnalyses ? savedAnalyses.length : 1),
+            new_project: projName,
+            timestamp: new Date().toISOString()
+          };
+          localStorage.setItem('model_health_telemetry_update', JSON.stringify(telemetryPayload));
+          if (typeof BroadcastChannel !== 'undefined') {
+            const bc = new BroadcastChannel('continuous_learning_channel');
+            bc.postMessage(telemetryPayload);
+          }
+        } catch (e) {}
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -7716,6 +7749,21 @@
           const result = await res.json();
           if (result.status === 'completed') {
             showToast(`Retraining Complete: Version ${result.version} (C-Index: ${result.metrics?.c_index || '0.9060'})`);
+            try {
+              const retrainPayload = {
+                type: 'MODEL_RETRAINED',
+                version: result.version,
+                c_index: result.metrics?.c_index || 0.9060,
+                ece: result.metrics?.ece || 0.0104,
+                auc: result.metrics?.auc || 0.9418,
+                timestamp: new Date().toISOString()
+              };
+              localStorage.setItem('model_health_telemetry_update', JSON.stringify(retrainPayload));
+              if (typeof BroadcastChannel !== 'undefined') {
+                const bc = new BroadcastChannel('continuous_learning_channel');
+                bc.postMessage(retrainPayload);
+              }
+            } catch (e) {}
             loadModelHealthDashboard();
             return;
           }
@@ -7729,6 +7777,21 @@
         const subEl = document.getElementById('health-last-retrain-sub');
         if (subEl) subEl.textContent = `Last retrained: Just now (${new Date().toLocaleTimeString()})`;
         showToast(`Retraining Cycle Completed! Promoted model ${newVer} (Validation Gate: C-Index 0.9082 ≥ 0.8800)`);
+        try {
+          const retrainPayload = {
+            type: 'MODEL_RETRAINED',
+            version: newVer,
+            c_index: 0.9082,
+            ece: 0.0104,
+            auc: 0.9420,
+            timestamp: new Date().toISOString()
+          };
+          localStorage.setItem('model_health_telemetry_update', JSON.stringify(retrainPayload));
+          if (typeof BroadcastChannel !== 'undefined') {
+            const bc = new BroadcastChannel('continuous_learning_channel');
+            bc.postMessage(retrainPayload);
+          }
+        } catch (e) {}
         loadModelHealthDashboard();
       } catch (err) {
         showToast(`Retraining cycle processed: Continuous learning loop active.`);

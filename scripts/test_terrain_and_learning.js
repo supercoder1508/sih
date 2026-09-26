@@ -87,13 +87,10 @@ testCases.forEach((tc, idx) => {
 });
 console.log('>>> TEST 2 PASSED: Client-side VEDAS engine accurately classified all test cases!\n');
 
-// 3. Verify HTML structure & Continuous Learning tab
-console.log('--- TEST 3: Verifying HTML tab navigation & VEDAS badge structure ---');
-if (!dashboardHtml.includes('id="tab-monitor-btn"') || dashboardHtml.includes('id="tab-monitor-btn" style="display:none;"')) {
-  throw new Error('tab-monitor-btn is hidden or missing from navigation');
-}
-if (!dashboardHtml.includes('Continuous Learning')) {
-  throw new Error('Continuous Learning tab text missing');
+// 3. Verify HTML structure: tab-monitor-btn hidden from top nav bar, methodology has continuous learning
+console.log('--- TEST 3: Verifying top navigation tab hidden & methodology telemetry integration ---');
+if (!dashboardHtml.includes('id="tab-monitor-btn" style="display:none;"')) {
+  throw new Error('tab-monitor-btn must be hidden from top navigation per user request');
 }
 if (!dashboardHtml.includes('id="inp-terrain-vedas-badge"')) {
   throw new Error('inp-terrain-vedas-badge missing');
@@ -101,7 +98,11 @@ if (!dashboardHtml.includes('id="inp-terrain-vedas-badge"')) {
 if (!dashboardHtml.includes('id="inp-terrain-vedas-text"')) {
   throw new Error('inp-terrain-vedas-text missing');
 }
-console.log('>>> TEST 3 PASSED: Continuous Learning tab and VEDAS elements are properly structured and visible.\n');
+const methHtml = fs.readFileSync(path.join(__dirname, '..', 'methodology.html'), 'utf8');
+if (!methHtml.includes('Autonomous Continuous Learning') || !methHtml.includes('continuous_learning_channel')) {
+  throw new Error('methodology.html must contain Continuous Learning section & reactive synchronization');
+}
+console.log('>>> TEST 3 PASSED: Continuous Learning tab hidden from navbar and actively synced on methodology page.\n');
 
 console.log('====================================================');
 console.log('ALL VEDAS TERRAIN & CONTINUOUS LEARNING TESTS PASSED!');
