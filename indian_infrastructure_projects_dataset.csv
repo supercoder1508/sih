@@ -13585,3 +13585,4 @@ TEST-SYNTH-47287-48,Highway,Karnataka,Kalaburagi,Desert,249.13,3545.47,2022,1056
 TEST-SYNTH-47287-49,Railway,Tamil Nadu,Tiruchirappalli,Hilly,310.51,2711.95,2023,361,24.05,False,2.03,Approved,306,Not_Required,23.8,0.5,0.5,0.5,0.5,0.5,0.5,0.5,,1,1,Low,75.2,Low
 INGEST-1789048238745,Highway,Maharashtra,Pune,Plain,85.0,450.0,2023,320,3.5,False,1.5,Approved,45,Stage 1 Approved,35.0,0.5,0.5,0.5,0.5,0.5,0.5,0.5,,1,0,Low,25.0,Low
 002,Renewable_Energy,Madhya Pradesh,Guna,Rural_Agri,150.0,1500.0,2023,500,5.0,False,1.5,Pending,30,Approved,30.0,0.5,0.5,0.5,0.5,0.5,0.5,0.5,,1,1,Medium,46.5,Medium
+TEST-AUTO-1790426454730,Highway,Gujarat,Ahmedabad,Plain,75.0,450.0,2023,120,3.5,False,1.25,Approved,45,Not_Required,40.0,0.5,0.5,0.5,0.5,0.5,0.5,0.5,4.330733340286331,1,0,Low,25.0,Low

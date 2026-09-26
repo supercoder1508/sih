@@ -685,7 +685,7 @@
             const cached = JSON.parse(telemetryStr);
             applyContinuousLearningTelemetry(cached);
           }
-          const savedStr = localStorage.getItem('savedAnalyses') || localStorage.getItem('saved_projects');
+          const savedStr = localStorage.getItem('saved_analyses') || localStorage.getItem('savedAnalyses') || localStorage.getItem('saved_projects') || localStorage.getItem('dynamic_training_dataset');
           if (savedStr) {
             const arr = JSON.parse(savedStr);
             if (Array.isArray(arr) && arr.length > 0) {
@@ -717,7 +717,7 @@
 
     // Listen to localStorage events (fires across different browser tabs simultaneously)
     window.addEventListener('storage', (event) => {
-      if (event.key === 'model_health_telemetry_update' || event.key === 'savedAnalyses' || event.key === 'saved_projects') {
+      if (event.key === 'model_health_telemetry_update' || event.key === 'saved_analyses' || event.key === 'savedAnalyses' || event.key === 'saved_projects' || event.key === 'dynamic_training_dataset') {
         refreshMethodologyTelemetry();
       }
     });

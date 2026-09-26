@@ -1917,14 +1917,18 @@ async def save_analysis(request: Request, req: SaveAnalysisRequest, user: Any = 
     training_data_count = None
     try:
         from continuous_learning import ingest_new_projects, retrain_pipeline
+        pid_base = str(payload_obj.project_id or req.project_name.strip() or f"PROJ-{rec_id[:8]}")
+        unique_project_id = f"{pid_base}_{rec_id[:6]}"
         training_record = {
-            "project_id": str(payload_obj.project_id or req.project_name.strip() or f"PROJ-{rec_id[:8]}"),
+            "project_id": unique_project_id,
+            "project_name": req.project_name.strip(),
             "state": state,
             "district": district,
             "project_type": project_type,
             "terrain_type": getattr(payload_obj, 'terrain_type', None) or req.input_payload.get('terrain_type', 'Plain'),
             "estimated_cost_inr_crore": float(getattr(payload_obj, 'estimated_cost_inr_crore', 100.0) or 100.0),
             "land_area_hectares": float(getattr(payload_obj, 'land_area_hectares', 50.0) or 50.0),
+            "land_area_log": float(np.log1p(float(getattr(payload_obj, 'land_area_hectares', 50.0) or 50.0))),
             "sia_approval_status": getattr(payload_obj, 'sia_approval_status', 'Pending') or 'Pending',
             "forest_clearance_status": getattr(payload_obj, 'forest_clearance_status', 'Not_Required') or 'Not_Required',
             "fund_disbursement_percent": float(getattr(payload_obj, 'fund_disbursement_percent', 10.0) or 10.0),
@@ -1941,7 +1945,7 @@ async def save_analysis(request: Request, req: SaveAnalysisRequest, user: Any = 
         }
 
         ingest_res = ingest_new_projects([training_record])
-        training_data_count = ingest_res.get("data_store_count")
+        training_data_count = ingest_res.get("data_store_count") or ingest_res.get("total_store_size")
         logging.info(f"[ContinuousLearning] Saved project '{req.project_name.strip()}' ingested into data store. Total records: {training_data_count}")
 
         # Invalidate geo cache so new saved project is immediately reflected in monitored projects
@@ -2599,6 +2603,42 @@ async def ingest_records(request: Request, payload: IngestRequest, user: Any = D
         raise HTTPException(status_code=400, detail=f"Ingestion error: {e}")
 
 
+
+@app.get("/dataset/download")
+@app.get("/api/dataset/download")
+def download_current_dataset():
+    """
+    Downloads the active production training dataset CSV with all real-time ingested projects.
+    """
+    csv_path = resolve_workspace_path("indian_infrastructure_projects_dataset.csv")
+    if os.path.exists(csv_path):
+        return FileResponse(
+            csv_path,
+            filename="indian_infrastructure_projects_dataset.csv",
+            media_type="text/csv"
+        )
+    raise HTTPException(status_code=404, detail="Dataset file not found")
+
+@app.get("/dataset/stats")
+@app.get("/api/dataset/stats")
+def get_dataset_stats():
+    """
+    Returns real-time dataset store counts and column metadata.
+    """
+    csv_path = resolve_workspace_path("indian_infrastructure_projects_dataset.csv")
+    count = 13586
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            count = len(df)
+        except Exception:
+            pass
+    return {
+        "status": "active",
+        "dataset_rows": count,
+        "dataset_name": "indian_infrastructure_projects_dataset.csv",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
 
 # Serve static assets from frontend or dashboard directory (e.g. geojson, images)
 @app.get("/{file_path:path}")

@@ -1,18 +1,18 @@
 {
-  "version": "v2.1.0",
-  "timestamp": "2026-09-26T10:21:02.966517+00:00",
-  "training_size": 13586,
+  "version": "v2.2.0",
+  "timestamp": "2026-09-26T12:46:32.650769+00:00",
+  "training_size": 13587,
   "feature_count": 27,
   "npu_provider": "CPUExecutionProvider",
   "metrics": {
-    "c_index": 0.9026,
-    "ece": 0.0104,
-    "auc": 0.9418,
+    "c_index": 0.9027,
+    "ece": 0.0156,
+    "auc": 0.9424,
     "c_index_passed": true,
     "ece_passed": true,
     "auc_passed": true,
     "promoted": true
   },
   "promoted": true,
-  "directory": "v2.1.0_20260926_102021"
+  "directory": "v2.2.0_20260926_124606"
 }
