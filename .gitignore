@@ -1,0 +1,67 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Pytest & Test Caches
+.pytest_cache/
+CACHEDIR.TAG
+lastfailed
+nodeids
+
+# Logs, Databases & Runtime artifacts
+*.log
+*.tsv
+*.db
+*.sqlite
+*.sqlite3
+monitoring.db
+events.out.tfevents*
+*.tmp
+*.bak
+*.orig
+catboost_info/
+logs/
+latest_drift_report.json
+models/v*
+*.onnx
+*.joblib
+
+# Environment secrets and credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+secrets.json
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# Node & Package Managers
+node_modules/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+sih_codebase.txt
+
+# Export Staging & Bundles
+export/
+*.zip
+*.bin
+updated_files.zip
+scratch_edge_*/
+scratch_edge_user/
+test_edge_*/
+scratch/
+
+
