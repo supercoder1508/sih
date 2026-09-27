@@ -35,7 +35,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-_WORKSPACE_ROOT = os.path.abspath(os.path.dirname(__file__))
+_WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 for _p in [
     _WORKSPACE_ROOT,
     os.path.join(_WORKSPACE_ROOT, "backend"),

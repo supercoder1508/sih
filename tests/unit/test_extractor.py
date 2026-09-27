@@ -1,7 +1,18 @@
+import os
+import sys
+
+_WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+for _p in [
+    _WORKSPACE_ROOT,
+    os.path.join(_WORKSPACE_ROOT, "backend", "01_intake"),
+]:
+    if os.path.exists(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from form_la7_extractor import FormLA7Extractor
 import json
 
-def run_tests():
+def test_extractor():
     # Test 1: DEMO PDF
     print('=== TEST 1: DEMO PDF ===')
     with open('templates/Land_Acquisition_Project_Data_Sheet_DEMO.pdf', 'rb') as f:
@@ -79,4 +90,4 @@ def run_tests():
         print(">>> TEST 5 PASSED: Rejected unrelated PDF ->", e)
 
 if __name__ == '__main__':
-    run_tests()
+    test_extractor()

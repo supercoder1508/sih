@@ -1,9 +1,27 @@
+import os
+import sys
+
+_WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+for _p in [
+    _WORKSPACE_ROOT,
+    os.path.join(_WORKSPACE_ROOT, "backend"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "01_intake"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "02_preprocessing"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "03_models"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "04_xai"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "05_orchestration"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "06_mlops"),
+    os.path.join(_WORKSPACE_ROOT, "backend", "07_api"),
+    os.path.join(_WORKSPACE_ROOT, "remoteness"),
+]:
+    if os.path.exists(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import pandas as pd
 import numpy as np
 import joblib
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, average_precision_score, confusion_matrix, brier_score_loss, mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 from sklearn.calibration import calibration_curve
-import sys
 import timeline_predictor
 from sksurv.metrics import concordance_index_ipcw, integrated_brier_score
 from timeline_predictor import create_structured_survival_array

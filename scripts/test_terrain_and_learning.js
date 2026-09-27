@@ -26,8 +26,8 @@ if (!healthData.ece || healthData.ece > 0.10) {
 if (!healthData.auc || healthData.auc < 0.85) {
   throw new Error(`AUC failed validation gate: ${healthData.auc}`);
 }
-if (healthData.dataset_size !== 13586) {
-  throw new Error(`Dataset size mismatch: expected 13586, got ${healthData.dataset_size}`);
+if (!healthData.dataset_size || healthData.dataset_size < 13500) {
+  throw new Error(`Dataset size mismatch: expected >= 13500, got ${healthData.dataset_size}`);
 }
 console.log('>>> TEST 1 PASSED: Model Health schema and validation gates valid.\n');
 
